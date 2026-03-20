@@ -1,7 +1,7 @@
 ---
 title: "Lab 10 - Grading the professor"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Anaelle Gackiere"
+date: "03-27-2026"
 output: github_document
 ---
 
@@ -17,21 +17,28 @@ library(openintro)
 
 ## Exercise 1
 
-*Provide your answer here.*  
-Add code chunks as needed. Don't forget to label your code chunks.
-
+The distribution of scores is negatively skewed, so students are relatively generous. The mean score is 4.175, and the minimum score given was 2.3 (at least not a 0!).
 
 ```{r exercise1_code}
-# Add your R code here
+# descriptives
+summary(evals$score)
+
+# visualization
+ggplot(evals, aes(x = score)) +
+  geom_bar( fill = "plum4", bins = 30) +
+  theme_minimal()
+
 ```
 
 ## Exercise 2
 
-*Provide your answer here.*  
-Add code chunks as needed.
-
 ```{r exercise2_code}
-# Add your R code here
+ggplot(data = evals, aes(x = score, y = bty_avg)) +
+  geom_jitter() +
+  labs(title = "Profesor Evaluation Score vs Average Beauty",
+       x = "Score",
+       y = "Average Beauty") +
+  theme_classic() 
 ```
 
 ## Additional Exercises
