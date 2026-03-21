@@ -1,7 +1,7 @@
 Lab 10 - Grading the professor
 ================
-Insert your name here
-Insert date here
+Anaelle Gackiere
+03-27-2026
 
 Here is a link to the [lab
 instructions](https://datascience4psych.github.io/DataScience4Psych/lab10.html).
@@ -14,28 +14,248 @@ library(tidymodels)
 library(openintro)
 ```
 
+Part 1
+
 ## Exercise 1
 
-*Provide your answer here.*  
-Add code chunks as needed. Don’t forget to label your code chunks.
+The distribution of scores is negatively skewed, so students are
+relatively generous. The mean score is 4.175, and the minimum score
+given was 2.3 (at least not a 0!).
 
 ``` r
-# Add your R code here
+# descriptives
+summary(evals$score)
 ```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   2.300   3.800   4.300   4.175   4.600   5.000
+
+``` r
+# visualization
+ggplot(evals, aes(x = score)) +
+  geom_bar( fill = "plum4", bins = 30) +
+  theme_minimal()
+```
+
+    ## Warning in geom_bar(fill = "plum4", bins = 30): Ignoring unknown parameters:
+    ## `bins`
+
+![](lab-10_files/figure-gfm/exercise1_code-1.png)<!-- -->
 
 ## Exercise 2
 
-*Provide your answer here.*  
-Add code chunks as needed.
+I actually initially did geom_jitter, but doing geom_point is
+problematic for discrete variables, and will result in a strange looking
+scatterplot like this one below (see description at exercise 3). The
+issue with geom_point here is that we are not (EXPLAIN).
 
 ``` r
-# Add your R code here
+ggplot(data = evals, aes(x = bty_avg, y = score)) +
+  geom_point() +
+  labs(title = "Profesor Evaluation Score vs Average Beauty",
+       x = "Average Professor Beauty Rating",
+       y = "Evaluation Score") +
+  theme_classic() 
 ```
 
-## Additional Exercises
+![](lab-10_files/figure-gfm/exercise2_code-1.png)<!-- -->
 
-*Repeat the format above for additional exercises.*
+## Exercise 3
 
-## Hint
+``` r
+ggplot(data = evals, aes(x = bty_avg, y = score)) +
+  geom_jitter() +
+  labs(title = "Profesor Evaluation Score vs Average Beauty",
+       x = "Average Professor Beauty Rating",
+       y = "Evaluation Score") +
+  theme_classic() 
+```
 
-For Exercise 12, the `relevel()` function can be helpful!
+![](lab-10_files/figure-gfm/exercise3-code-1.png)<!-- --> We have a few
+outliers of low scores with low attractiveness, but overall most of the
+points are high regardless of beauty level. After closer inspection,
+there might be a somewhat positvie trend between beauty and score, but
+it’s unclear to what extent and whether or not it’s linear.
+
+Part 2
+
+### Exercise 4
+
+Equation for the fitted model: score = 3.88 + 0.0666 x bty_avg. A
+one-point increase in beauty predicts a 0.07 increase for evaluation
+scores. The effect is quite small: R-squared = 0.035. That is,
+professors rated as more attractive receive slightly higher evaluation
+scores.
+
+``` r
+# model
+m_bty <- lm(score ~ bty_avg, data = evals)
+
+# view output
+m_bty
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = score ~ bty_avg, data = evals)
+    ## 
+    ## Coefficients:
+    ## (Intercept)      bty_avg  
+    ##     3.88034      0.06664
+
+``` r
+# effect check
+glance(m_bty)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic   p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>     <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1    0.0350        0.0329 0.535      16.7 0.0000508     1  -366.  738.  751.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+Replot your existing visualization, this time add a regression line in
+orange. Turn off the default shading around the line. (By default, the
+plot includes shading around the line.)
+
+### Exercise 5
+
+``` r
+ggplot(evals, aes(x = bty_avg, y = score)) +
+  geom_jitter(width = 0.1, height = 0.1, color = "black", alpha = 0.5) +
+  geom_smooth(method = "lm", color = "orange", se = FALSE) +
+  labs(
+    title = "Evaluation Score vs. Beauty Rating",
+    subtitle = "Regression Line in Orange",
+    x = "Average Professor Beauty Rating",
+    y = "Evaluation Score"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+```
+
+    ## `geom_smooth()` using formula = 'y ~ x'
+
+![](lab-10_files/figure-gfm/regression-plot-1.png)<!-- -->
+
+### Exercise 6
+
+Then, stepping back, interpret what this model is really saying:
+
+How much do evaluation scores change with beauty ratings (slope)? What
+does the intercept represent here? Is it meaningful in this context, or
+just a mathematical artifact? Explain your reasoning. What is the  
+R 2 value of this model? Interpret it in context. What does it tell you
+about whether beauty is a “big deal” or a pretty minor piece of the
+story? That shading you turned off represents uncertainty around the
+line—why might it be easy to read too much into it at this stage?
+
+Part 3
+
+### Exercise 7
+
+Take a look at the model output. What’s the reference level? What do the
+coefficients tell you about how evaluation scores differ between male
+and female professors? Write the predicted mean evaluation score for
+each gender.
+
+``` r
+m_gen <- lm(score ~ gender, data = evals)
+tidy(m_gen)
+```
+
+    ## # A tibble: 2 × 5
+    ##   term        estimate std.error statistic p.value
+    ##   <chr>          <dbl>     <dbl>     <dbl>   <dbl>
+    ## 1 (Intercept)    4.09     0.0387    106.   0      
+    ## 2 gendermale     0.142    0.0508      2.78 0.00558
+
+### Exercise 8
+
+Now let’s do one more categorical predictor: rank
+
+Actually, let’s do three slightly different versions of this model to
+see how changing the reference level or regrouping categories affects
+the output.
+
+Create a new variable from rank called rank_relevel where “tenure track”
+is the baseline level. Create another new variable called
+tenure_eligible that labels “teaching” faculty as “no” and labels
+“tenure track” and “tenured” faculty as “yes”.
+
+Fit three different linear models to explore how rank affects evaluation
+scores. Each of these models will use a different version of the rank
+variable to predict average professor evaluation score
+
+### Exercise 9
+
+Based on the regression outputs, interpret how teaching faculty and
+tenured faculty differ from that baseline. (Hint you should interpret
+the slopes and intercepts for all three models in context of the data.)
+
+### Exercise 10
+
+Report the  
+R 2 . Does rank explain much, or not really?
+
+Part 4: Multiple Linear Regression \### Is the “beauty effect” still
+there once we account for gender?
+
+Fit these two models:
+
+m_bty: score ~ bty_avg
+
+m_bty_gen: score ~ bty_avg + gender
+
+Then answer:
+
+What changes in the beauty slope when gender is added?
+
+For two professors with the same beauty rating, does gender still shift
+the predicted score?
+
+Compare the adjusted  
+R 2 values. Is gender actually helping much, or is beauty doing most of
+the work already?
+
+Finally, swap gender out and add rank instead.
+
+Fit m_bty_rank: score ~ bty_avg + rank and then interpret one rank
+coefficient and the beauty slope in context.
+
+Part 5: The Search for the Best Model Going forward, only consider the
+following variables as potential predictors: rank, ethnicity, gender,
+language, age, cls_perc_eval, cls_did_eval, cls_students, cls_level,
+cls_profs, cls_credits, bty_avg.
+
+Which variable, on its own, would you expect to be the worst predictor
+of evaluation scores? Why? Hint: Think about which variable would you
+expect to not have any association with the professor’s score.
+
+Check your suspicions from the previous exercise. Include the model
+output for that variable in your response.
+
+Suppose you wanted to fit a full model with the variables listed above.
+If you are already going to include cls_perc_eval and cls_students,
+which variable should you not include as an additional predictor? Why?
+
+Fit a full model with all predictors listed above (except for the one
+you decided to exclude) in the previous question.
+
+Using backward-selection with adjusted R-squared as the selection
+criterion, determine the best model. You do not need to show all steps
+in your answer, just the output for the final model. Also, write out the
+linear model for predicting score based on the final model you settle
+on.
+
+Interpret the slopes of one numerical and one categorical predictor
+based on your final model.
+
+Based on your final model, describe the characteristics of a professor
+and course at University of Texas at Austin that would be associated
+with a high evaluation score.
+
+Would you be comfortable generalizing your conclusions to apply to
+professors generally (at any university)? Why or why not?
