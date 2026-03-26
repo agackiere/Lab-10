@@ -14,7 +14,7 @@ library(tidymodels)
 library(openintro)
 ```
 
-Part 1
+# Part 1
 
 ## Exercise 1
 
@@ -71,21 +71,23 @@ ggplot(data = evals, aes(x = bty_avg, y = score)) +
   theme_classic() 
 ```
 
-![](lab-10_files/figure-gfm/exercise3-code-1.png)<!-- --> We have a few
-outliers of low scores with low attractiveness, but overall most of the
-points are high regardless of beauty level. After closer inspection,
-there might be a somewhat positvie trend between beauty and score, but
-it’s unclear to what extent and whether or not it’s linear.
+![](lab-10_files/figure-gfm/exercise3-code-1.png)<!-- -->
 
-Part 2
+We have a few outliers of low scores with low attractiveness, but
+overall most of the points are high regardless of beauty level. After
+closer inspection, there might be a somewhat positive trend between
+beauty and score, but it’s unclear to what extent and whether or not
+it’s linear.
+
+# Part 2
 
 ### Exercise 4
 
-Equation for the fitted model: score = 3.88 + 0.0666 x bty_avg. A
-one-point increase in beauty predicts a 0.07 increase for evaluation
-scores. The effect is quite small: R-squared = 0.035. That is,
-professors rated as more attractive receive slightly higher evaluation
-scores.
+The fitted model is: **y = 3.88 + 0.0666 × bty_avg** For every one-point
+increase in average beauty rating, the model predicts evaluation score
+increases by about 0.07 points. For exampple, if a professor goes from a
+beauty rating of 4 to a 5, their predicted evaluation score goes up by
+0.07.
 
 ``` r
 # model
@@ -114,10 +116,6 @@ glance(m_bty)
     ## 1    0.0350        0.0329 0.535      16.7 0.0000508     1  -366.  738.  751.
     ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
 
-Replot your existing visualization, this time add a regression line in
-orange. Turn off the default shading around the line. (By default, the
-plot includes shading around the line.)
-
 ### Exercise 5
 
 ``` r
@@ -142,24 +140,33 @@ ggplot(evals, aes(x = bty_avg, y = score)) +
 
 ### Exercise 6
 
-Then, stepping back, interpret what this model is really saying:
+As mentioned before, for every one-point increase in average beauty
+rating, the model predicts evaluation score increases by about 0.07
+points; thus, as beauty ratings increase, so do evaluation scores. The
+intercept is not meaningful here since there is no true 0. This is a
+statistically detectable but practically trivial effect, since beauty
+explains only 3.5% of the variation in scores (R² = 0.035), meaning the
+vast majority of what drives evaluation scores has nothing to do with
+looks. Right now, it seems that beauty is a minor piece of the story.
+The issue with the shading here is it can make a trivial relationship
+look like a big deal just because it takes up visual space.
 
-How much do evaluation scores change with beauty ratings (slope)? What
-does the intercept represent here? Is it meaningful in this context, or
-just a mathematical artifact? Explain your reasoning. What is the  
-R 2 value of this model? Interpret it in context. What does it tell you
-about whether beauty is a “big deal” or a pretty minor piece of the
-story? That shading you turned off represents uncertainty around the
-line—why might it be easy to read too much into it at this stage?
-
-Part 3
+# Part 3
 
 ### Exercise 7
 
-Take a look at the model output. What’s the reference level? What do the
-coefficients tell you about how evaluation scores differ between male
-and female professors? Write the predicted mean evaluation score for
-each gender.
+The reference level is “Female”; R can’t put “female” and “male” into a
+math equation directly, so it turns one into 0 and the other into 1.
+Female = 0 (the baseline), male = 1. The two coefficients are the
+Intercept = 4.09, which is the predicted score for female professors
+(the reference level) and gendermale = 0.14. Male professors score 0.14
+points higher than female professors on average
+
+Predicted mean evaluation score for each gender:
+
+Female: 4.09 + 0.14(0) = 4.09
+
+Male: 4.09 + 0.14(1) = 4.23
 
 ``` r
 m_gen <- lm(score ~ gender, data = evals)
@@ -174,58 +181,224 @@ tidy(m_gen)
 
 ### Exercise 8
 
-Now let’s do one more categorical predictor: rank
+``` r
+# new variables
 
-Actually, let’s do three slightly different versions of this model to
-see how changing the reference level or regrouping categories affects
-the output.
+evals <- evals %>%
+  mutate(
+    rank_relevel = relevel(factor(rank), ref = "tenure track"),
+    tenure_eligible = ifelse(rank == "teaching", "no", "yes")
+  )
 
-Create a new variable from rank called rank_relevel where “tenure track”
-is the baseline level. Create another new variable called
-tenure_eligible that labels “teaching” faculty as “no” and labels
-“tenure track” and “tenured” faculty as “yes”.
+# Model 1, og rank variable 
+m_rank <- lm(score ~ rank, data = evals)
 
-Fit three different linear models to explore how rank affects evaluation
-scores. Each of these models will use a different version of the rank
-variable to predict average professor evaluation score
+# Model 2, rank with tenure track as reference
+m_rank_relevel <- lm(score ~ rank_relevel, data = evals)
+
+# Model 3, tenure eligible variable
+m_tenure_eligible <- lm(score ~ tenure_eligible, data = evals)
+
+tidy(m_rank)
+```
+
+    ## # A tibble: 3 × 5
+    ##   term             estimate std.error statistic   p.value
+    ##   <chr>               <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)         4.28     0.0537     79.9  1.02e-271
+    ## 2 ranktenure track   -0.130    0.0748     -1.73 8.37e-  2
+    ## 3 ranktenured        -0.145    0.0636     -2.28 2.28e-  2
+
+``` r
+tidy(m_rank_relevel)
+```
+
+    ## # A tibble: 3 × 5
+    ##   term                 estimate std.error statistic   p.value
+    ##   <chr>                   <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)            4.15      0.0521    79.7   2.58e-271
+    ## 2 rank_relevelteaching   0.130     0.0748     1.73  8.37e-  2
+    ## 3 rank_releveltenured   -0.0155    0.0623    -0.249 8.04e-  1
+
+``` r
+tidy(m_tenure_eligible)
+```
+
+    ## # A tibble: 2 × 5
+    ##   term               estimate std.error statistic   p.value
+    ##   <chr>                 <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)           4.28     0.0536     79.9  2.72e-272
+    ## 2 tenure_eligibleyes   -0.141    0.0607     -2.32 2.10e-  2
+
+``` r
+glance(m_rank)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>   <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1    0.0116       0.00733 0.542      2.71  0.0679     2  -372.  752.  768.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+``` r
+glance(m_rank_relevel)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>   <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1    0.0116       0.00733 0.542      2.71  0.0679     2  -372.  752.  768.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+``` r
+glance(m_tenure_eligible)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>   <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1    0.0115       0.00935 0.541      5.36  0.0210     1  -372.  750.  762.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
 
 ### Exercise 9
 
-Based on the regression outputs, interpret how teaching faculty and
-tenured faculty differ from that baseline. (Hint you should interpret
-the slopes and intercepts for all three models in context of the data.)
+Model 1 uses teaching as the reference level, giving an intercept of
+4.28, meaning teaching faculty have a predicted evaluation score of
+4.28. Tenure track faculty score 0.13 points lower (4.15) and tenured
+faculty score 0.15 points lower (4.13) than teaching faculty. Model 2
+switches the reference to tenure track, giving an intercept of 4.15.
+Teaching faculty score 0.13 points higher (4.28) than tenure track,
+while tenured faculty score essentially the same as tenure track, only
+0.015 points lower (4.14). Model 3 collapses tenure track and tenured
+into one “yes” group, with teaching as the reference at 4.28. Tenure
+eligible faculty score 0.14 points lower (4.14) than teaching faculty.
+Overall, teaching faculty score slightly higher than tenure track and
+tenured faculty, but the differences are small.
 
 ### Exercise 10
 
-Report the  
-R 2 . Does rank explain much, or not really?
+R-squared for Model 1: 0.01 (p = 0.068)
 
-Part 4: Multiple Linear Regression \### Is the “beauty effect” still
-there once we account for gender?
+R-squared for Model 2: 0.01 (p = 0.068)
 
-Fit these two models:
+R-squared for Model 3: 0.01 (p \< 0.05)
 
-m_bty: score ~ bty_avg
+Based on the R-squared of 0.01, rank explains only 1% of the variation
+in evaluation scores. Even though the third model’s R-squared is
+statistically significant, that does not mean much, practically
+speaking.
 
-m_bty_gen: score ~ bty_avg + gender
+# Part 4
 
-Then answer:
+Is the “beauty effect” still there once we account for gender?
 
-What changes in the beauty slope when gender is added?
+``` r
+# beauty only
+m_bty <- lm(score ~ bty_avg, data = evals)
+tidy(m_bty)
+```
 
-For two professors with the same beauty rating, does gender still shift
-the predicted score?
+    ## # A tibble: 2 × 5
+    ##   term        estimate std.error statistic   p.value
+    ##   <chr>          <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)   3.88      0.0761     51.0  1.56e-191
+    ## 2 bty_avg       0.0666    0.0163      4.09 5.08e-  5
 
-Compare the adjusted  
-R 2 values. Is gender actually helping much, or is beauty doing most of
-the work already?
+``` r
+glance(m_bty)
+```
 
-Finally, swap gender out and add rank instead.
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic   p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>     <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1    0.0350        0.0329 0.535      16.7 0.0000508     1  -366.  738.  751.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
 
-Fit m_bty_rank: score ~ bty_avg + rank and then interpret one rank
-coefficient and the beauty slope in context.
+``` r
+# beauty + gender 
+m_bty_gen <- lm(score ~ bty_avg + gender, data = evals)
+tidy(m_bty_gen)
+```
 
-Part 5: The Search for the Best Model Going forward, only consider the
+    ## # A tibble: 3 × 5
+    ##   term        estimate std.error statistic   p.value
+    ##   <chr>          <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)   3.75      0.0847     44.3  6.23e-168
+    ## 2 bty_avg       0.0742    0.0163      4.56 6.48e-  6
+    ## 3 gendermale    0.172     0.0502      3.43 6.52e-  4
+
+``` r
+glance(m_bty_gen)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic     p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>       <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1    0.0591        0.0550 0.529      14.5 0.000000818     2  -360.  729.  745.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+### Exercise 11
+
+When gender is added, the beauty slope increases slightly from 0.067 to
+0.074.
+
+### Exercise 12
+
+For two professors with the same beauty rating, since the gender
+coefficient is 0.17, the male professor is still predicted to score 0.17
+points higher.
+
+### Exercise 13
+
+Adjusted R-squared for Beauty only Model: 0.033
+
+Adjusted R-squared for Beauty and Gender Model: 0.055
+
+Beauty is doing most of the work. Adding gender helps a little, since it
+bumps the adjusted r-squared from 0.033 to 0.055, but that’s only a 2
+percentage point improvement. Both models are still weak overall and
+neither beauty nor gender explains evaluation scores in a meaningful
+way.
+
+### Exercise 14
+
+``` r
+m_bty_rank <- lm(score ~ bty_avg + rank, data = evals)
+tidy(m_bty_rank)
+```
+
+    ## # A tibble: 4 × 5
+    ##   term             estimate std.error statistic   p.value
+    ##   <chr>               <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)        3.98      0.0908     43.9  2.92e-166
+    ## 2 bty_avg            0.0678    0.0165      4.10 4.92e-  5
+    ## 3 ranktenure track  -0.161     0.0740     -2.17 3.03e-  2
+    ## 4 ranktenured       -0.126     0.0627     -2.01 4.45e-  2
+
+``` r
+glance(m_bty_rank)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic   p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>     <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1    0.0465        0.0403 0.533      7.46 0.0000688     3  -363.  737.  758.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+The intercept is 3.98, which is the predicted score for teaching faculty
+with a beauty rating of 0. The beauty slope is 0.068, meaning for every
+one point increase in beauty rating, evaluation scores increase by 0.068
+points regardless of rank. Even after controlling for rank, beauty still
+has an effect.
+
+For rank, tenure track professors score 0.16 points lower than teaching
+faculty and tenured professors score 0.13 points lower than teaching
+faculty, holding beauty constant. Teaching faculty are still the
+highest.
+
+# Part 5
+
+: The Search for the Best Model Going forward, only consider the
 following variables as potential predictors: rank, ethnicity, gender,
 language, age, cls_perc_eval, cls_did_eval, cls_students, cls_level,
 cls_profs, cls_credits, bty_avg.
@@ -259,3 +432,9 @@ with a high evaluation score.
 
 Would you be comfortable generalizing your conclusions to apply to
 professors generally (at any university)? Why or why not?
+
+I would be hesitant to generalize my conclusions to professors at any
+university, as students and professors are nested in the university, so
+I would want to run an MLM to test this across multiple universities,
+and then we may be able to generalize more confidently to the general
+university population.

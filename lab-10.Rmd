@@ -209,36 +209,68 @@ speaking.
 
 # Part 4
 
-Fit these two models:
+Is the “beauty effect” still there once we account for gender?
 
-m_bty: score \~ bty_avg
+```{r part4-code}
+# beauty only
+m_bty <- lm(score ~ bty_avg, data = evals)
+tidy(m_bty)
+glance(m_bty)
 
-m_bty_gen: score \~ bty_avg + gender
-
-```{r}
-
-
-
+# beauty + gender 
+m_bty_gen <- lm(score ~ bty_avg + gender, data = evals)
+tidy(m_bty_gen)
+glance(m_bty_gen)
 
 ```
 
-Then answer:
+### Exercise 11 
 
-What changes in the beauty slope when gender is added?
+When gender is added, the beauty slope increases slightly from 0.067 to
+0.074.
 
-For two professors with the same beauty rating, does gender still shift
-the predicted score?
+### Exercise 12
 
-Compare the adjusted\
-R 2 values. Is gender actually helping much, or is beauty doing most of
-the work already?
+For two professors with the same beauty rating, since the gender
+coefficient is 0.17, the male professor is still predicted to score 0.17
+points higher.
 
-Finally, swap gender out and add rank instead.
+### Exercise 13
 
-Fit m_bty_rank: score \~ bty_avg + rank and then interpret one rank
-coefficient and the beauty slope in context.
+Adjusted R-squared for Beauty only Model: 0.033
 
-Part 5: The Search for the Best Model Going forward, only consider the
+Adjusted R-squared for Beauty and Gender Model: 0.055
+
+Beauty is doing most of the work. Adding gender helps a little, since it
+bumps the adjusted r-squared from 0.033 to 0.055, but that's only a 2
+percentage point improvement. Both models are still weak overall and
+neither beauty nor gender explains evaluation scores in a meaningful
+way.
+
+### Exercise 14
+
+```{r exercise14-code}
+
+m_bty_rank <- lm(score ~ bty_avg + rank, data = evals)
+tidy(m_bty_rank)
+glance(m_bty_rank)
+
+```
+
+The intercept is 3.98, which is the predicted score for teaching faculty
+with a beauty rating of 0. The beauty slope is 0.068, meaning for every
+one point increase in beauty rating, evaluation scores increase by 0.068
+points regardless of rank. Even after controlling for rank, beauty still
+has an effect.
+
+For rank, tenure track professors score 0.16 points lower than teaching
+faculty and tenured professors score 0.13 points lower than teaching
+faculty, holding beauty constant. Teaching faculty are still the
+highest.
+
+# Part 5
+
+: The Search for the Best Model Going forward, only consider the
 following variables as potential predictors: rank, ethnicity, gender,
 language, age, cls_perc_eval, cls_did_eval, cls_students, cls_level,
 cls_profs, cls_credits, bty_avg.
