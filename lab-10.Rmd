@@ -151,42 +151,63 @@ tidy(m_gen)
 
 ### Exercise 8
 
-Now let’s do one more categorical predictor: rank
-
-Actually, let’s do three slightly different versions of this model to
-see how changing the reference level or regrouping categories affects
-the output.
-
-Create a new variable from rank called rank_relevel where "tenure track"
-is the baseline level. Create another new variable called
-tenure_eligible that labels "teaching" faculty as "no" and labels
-"tenure track" and "tenured" faculty as "yes".
-
-Fit three different linear models to explore how rank affects evaluation
-scores. Each of these models will use a different version of the rank
-variable to predict average professor evaluation score
-
 ```{r exercise8-code}
-# tenure track, tenure eligible
+# new variables
 
+evals <- evals %>%
+  mutate(
+    rank_relevel = relevel(factor(rank), ref = "tenure track"),
+    tenure_eligible = ifelse(rank == "teaching", "no", "yes")
+  )
 
+# Model 1, og rank variable 
+m_rank <- lm(score ~ rank, data = evals)
 
+# Model 2, rank with tenure track as reference
+m_rank_relevel <- lm(score ~ rank_relevel, data = evals)
+
+# Model 3, tenure eligible variable
+m_tenure_eligible <- lm(score ~ tenure_eligible, data = evals)
+
+tidy(m_rank)
+tidy(m_rank_relevel)
+tidy(m_tenure_eligible)
+
+glance(m_rank)
+glance(m_rank_relevel)
+glance(m_tenure_eligible)
 
 ```
 
 ### Exercise 9
 
-Based on the regression outputs, interpret how teaching faculty and
-tenured faculty differ from that baseline. (Hint you should interpret
-the slopes and intercepts for all three models in context of the data.)
+Model 1 uses teaching as the reference level, giving an intercept of
+4.28, meaning teaching faculty have a predicted evaluation score of
+4.28. Tenure track faculty score 0.13 points lower (4.15) and tenured
+faculty score 0.15 points lower (4.13) than teaching faculty. Model 2
+switches the reference to tenure track, giving an intercept of 4.15.
+Teaching faculty score 0.13 points higher (4.28) than tenure track,
+while tenured faculty score essentially the same as tenure track, only
+0.015 points lower (4.14). Model 3 collapses tenure track and tenured
+into one "yes" group, with teaching as the reference at 4.28. Tenure
+eligible faculty score 0.14 points lower (4.14) than teaching faculty.
+Overall, teaching faculty score slightly higher than tenure track and
+tenured faculty, but the differences are small.
 
 ### Exercise 10
 
-Report the\
-R 2 . Does rank explain much, or not really?
+R-squared for Model 1: 0.01 (p = 0.068)
 
-Part 4: Multiple Linear Regression \### Is the “beauty effect” still
-there once we account for gender?
+R-squared for Model 2: 0.01 (p = 0.068)
+
+R-squared for Model 3: 0.01 (p \< 0.05)
+
+Based on the R-squared of 0.01, rank explains only 1% of the variation
+in evaluation scores. Even though the third model's R-squared is
+statistically significant, that does not mean much, practically
+speaking.
+
+# Part 4
 
 Fit these two models:
 
