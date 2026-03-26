@@ -398,43 +398,170 @@ highest.
 
 # Part 5
 
-: The Search for the Best Model Going forward, only consider the
-following variables as potential predictors: rank, ethnicity, gender,
-language, age, cls_perc_eval, cls_did_eval, cls_students, cls_level,
-cls_profs, cls_credits, bty_avg.
+### Exercise 15
 
-Which variable, on its own, would you expect to be the worst predictor
-of evaluation scores? Why? Hint: Think about which variable would you
-expect to not have any association with the professor’s score.
+On its own, I would expect `cls_profs` (number of professors teaching a
+section) to be the worst predictor of evaluation scores. I don’t really
+see a reason why whether a course is taught by one professor or multiple
+professors would affect how students rate an individual professor’s
+teaching.
 
-Check your suspicions from the previous exercise. Include the model
-output for that variable in your response.
+### Exercise 16
 
-Suppose you wanted to fit a full model with the variables listed above.
-If you are already going to include cls_perc_eval and cls_students,
-which variable should you not include as an additional predictor? Why?
+As I expected, the adjusted R-squared for cls_profs is only -.002. The
+coefficient for is -0.029, so for courses taught by a single professor
+score 0.029 points lower than multi-professor courses. The p-value is
+0.58, so we can confirm that this is a useless predictor.
 
-Fit a full model with all predictors listed above (except for the one
-you decided to exclude) in the previous question.
+``` r
+m_cls_profs <- lm(score ~ cls_profs, data = evals)
+tidy(m_cls_profs)
+```
+
+    ## # A tibble: 2 × 5
+    ##   term            estimate std.error statistic p.value
+    ##   <chr>              <dbl>     <dbl>     <dbl>   <dbl>
+    ## 1 (Intercept)       4.18      0.0311   134.      0    
+    ## 2 cls_profssingle  -0.0292    0.0534    -0.547   0.585
+
+``` r
+glance(m_cls_profs)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>   <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1  0.000649      -0.00152 0.544     0.299   0.585     1  -374.  755.  767.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+### Exercise 17
+
+We should not include `cls_did_eval` as an additional predictor because
+it’s probably derived from `cls_perc_eval` and `cls_students`. The
+number of students who completed evaluations is just the percentage
+times the total students, so including all three would be redundant (and
+leads to multicolinearity).
+
+### Exercise 18
+
+``` r
+m_full <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + 
+               cls_students + cls_level + cls_credits + bty_avg, 
+             data = evals)
+tidy(m_full)
+```
+
+    ## # A tibble: 12 × 5
+    ##    term                   estimate std.error statistic  p.value
+    ##    <chr>                     <dbl>     <dbl>     <dbl>    <dbl>
+    ##  1 (Intercept)            3.53      0.240       14.7   3.54e-40
+    ##  2 ranktenure track      -0.107     0.0819      -1.31  1.91e- 1
+    ##  3 ranktenured           -0.0454    0.0651      -0.697 4.86e- 1
+    ##  4 ethnicitynot minority  0.189     0.0761       2.49  1.32e- 2
+    ##  5 gendermale             0.178     0.0514       3.47  5.78e- 4
+    ##  6 languagenon-english   -0.127     0.108       -1.17  2.41e- 1
+    ##  7 age                   -0.00666   0.00308     -2.16  3.10e- 2
+    ##  8 cls_perc_eval          0.00568   0.00154      3.68  2.65e- 4
+    ##  9 cls_students           0.000449  0.000357     1.26  2.09e- 1
+    ## 10 cls_levelupper         0.0184    0.0555       0.331 7.41e- 1
+    ## 11 cls_creditsone credit  0.511     0.116        4.40  1.36e- 5
+    ## 12 bty_avg                0.0611    0.0166       3.67  2.67e- 4
+
+``` r
+glance(m_full)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic  p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>    <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1     0.163         0.143 0.503      8.01 8.30e-13    11  -333.  692.  746.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+### Exercise 19
 
 Using backward-selection with adjusted R-squared as the selection
-criterion, determine the best model. You do not need to show all steps
-in your answer, just the output for the final model. Also, write out the
-linear model for predicting score based on the final model you settle
-on.
+criterion, the best model is m4: Y = 3.45 + 0.20(ethnicity) +
+0.18(gender) - 0.16(language) - 0.005(age) + 0.005(cls_perc_eval) +
+0.52(cls_credits) + 0.065(bty_avg).
 
-Interpret the slopes of one numerical and one categorical predictor
-based on your final model.
+``` r
+# remove cls_students
+m2 <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + 
+           cls_level + cls_credits + bty_avg, data = evals)
+glance(m2)
+```
 
-Based on your final model, describe the characteristics of a professor
-and course at University of Texas at Austin that would be associated
-with a high evaluation score.
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic  p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>    <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1     0.161         0.142 0.504      8.64 5.53e-13    10  -334.  692.  742.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
 
-Would you be comfortable generalizing your conclusions to apply to
-professors generally (at any university)? Why or why not?
+``` r
+# remove cls_level
+m3 <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + 
+           cls_credits + bty_avg, data = evals)
+glance(m3)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic  p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>    <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1     0.161         0.144 0.503      9.63 1.71e-13     9  -334.  690.  735.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+``` r
+# remove rank and this is the final model
+m4 <- lm(score ~ ethnicity + gender + language + age + cls_perc_eval + 
+           cls_credits + bty_avg, data = evals)
+glance(m4)
+```
+
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic  p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>    <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1     0.158         0.145 0.503      12.2 2.88e-14     7  -335.  688.  725.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
+``` r
+tidy(m4)
+```
+
+    ## # A tibble: 8 × 5
+    ##   term                  estimate std.error statistic  p.value
+    ##   <chr>                    <dbl>     <dbl>     <dbl>    <dbl>
+    ## 1 (Intercept)            3.45      0.203       17.0  2.26e-50
+    ## 2 ethnicitynot minority  0.205     0.0747       2.74 6.38e- 3
+    ## 3 gendermale             0.185     0.0499       3.70 2.38e- 4
+    ## 4 languagenon-english   -0.161     0.103       -1.56 1.18e- 1
+    ## 5 age                   -0.00501   0.00261     -1.92 5.53e- 2
+    ## 6 cls_perc_eval          0.00509   0.00144      3.54 4.36e- 4
+    ## 7 cls_creditsone credit  0.515     0.105        4.91 1.26e- 6
+    ## 8 bty_avg                0.0650    0.0163       3.98 7.99e- 5
+
+### Exercise 20
+
+Numerical predictor (AGE): For every one year increase in age,
+evaluation scores decrease by 0.005 points, holding all other variables
+constant.
+
+Categorical predictor (ETHNICITY): Professors who are not a minority
+score 0.20 points higher than minority professors, holding all other
+variables constant.
+
+### Exercise 21
+
+Based on the model, the highest predicted evaluation score would come
+from a professor who is male, not a minority, teaches in English, is
+younger, more attractive, and teaches a one credit course with a high
+percentage of students completing evaluations.
+
+### Exercise 22
 
 I would be hesitant to generalize my conclusions to professors at any
 university, as students and professors are nested in the university, so
 I would want to run an MLM to test this across multiple universities,
 and then we may be able to generalize more confidently to the general
-university population.
+university population. Even within the school, the sample may not be
+representative of all departments or course types, which adds another
+layer of caution before generalizing anywhere.

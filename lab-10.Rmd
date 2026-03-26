@@ -270,54 +270,99 @@ highest.
 
 # Part 5
 
-: The Search for the Best Model Going forward, only consider the
-following variables as potential predictors: rank, ethnicity, gender,
-language, age, cls_perc_eval, cls_did_eval, cls_students, cls_level,
-cls_profs, cls_credits, bty_avg.
+### Exercise 15
 
-Which variable, on its own, would you expect to be the worst predictor
-of evaluation scores? Why? Hint: Think about which variable would you
-expect to not have any association with the professor’s score.
+On its own, I would expect `cls_profs` (number of professors teaching a
+section) to be the worst predictor of evaluation scores. I don't really
+see a reason why whether a course is taught by one professor or multiple
+professors would affect how students rate an individual professor's
+teaching.
 
-Check your suspicions from the previous exercise. Include the model
-output for that variable in your response.
+### Exercise 16
 
-Suppose you wanted to fit a full model with the variables listed above.
-If you are already going to include cls_perc_eval and cls_students,
-which variable should you not include as an additional predictor? Why?
+As I expected, the adjusted R-squared for cls_profs is only -.002. The
+coefficient for is -0.029, so for courses taught by a single professor
+score 0.029 points lower than multi-professor courses. The p-value is
+0.58, so we can confirm that this is a useless predictor.
 
-Fit a full model with all predictors listed above (except for the one
-you decided to exclude) in the previous question.
+```{r exercise16-code}
 
-```{r}
-
-
+m_cls_profs <- lm(score ~ cls_profs, data = evals)
+tidy(m_cls_profs)
+glance(m_cls_profs)
 
 ```
+
+### Exercise 17
+
+We should not include `cls_did_eval` as an additional predictor because
+it's probably derived from `cls_perc_eval` and `cls_students`. The
+number of students who completed evaluations is just the percentage
+times the total students, so including all three would be redundant (and
+leads to multicolinearity).
+
+### Exercise 18
+
+```{r exercise18-code}
+
+m_full <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + 
+               cls_students + cls_level + cls_credits + bty_avg, 
+             data = evals)
+tidy(m_full)
+glance(m_full)
+
+```
+
+### Exercise 19
 
 Using backward-selection with adjusted R-squared as the selection
-criterion, determine the best model. You do not need to show all steps
-in your answer, just the output for the final model. Also, write out the
-linear model for predicting score based on the final model you settle
-on.
+criterion, the best model is m4: Y = 3.45 + 0.20(ethnicity) +
+0.18(gender) - 0.16(language) - 0.005(age) + 0.005(cls_perc_eval) +
+0.52(cls_credits) + 0.065(bty_avg).
 
-```{r}
+```{r exercise19-code}
 
+# remove cls_students
+m2 <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + 
+           cls_level + cls_credits + bty_avg, data = evals)
+glance(m2)
+
+# remove cls_level
+m3 <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + 
+           cls_credits + bty_avg, data = evals)
+glance(m3)
+
+# remove rank and this is the final model
+m4 <- lm(score ~ ethnicity + gender + language + age + cls_perc_eval + 
+           cls_credits + bty_avg, data = evals)
+glance(m4)
+tidy(m4)
 
 ```
 
-Interpret the slopes of one numerical and one categorical predictor
-based on your final model.
+### Exercise 20
 
-Based on your final model, describe the characteristics of a professor
-and course at University of Texas at Austin that would be associated
-with a high evaluation score.
+Numerical predictor (AGE): For every one year increase in age,
+evaluation scores decrease by 0.005 points, holding all other variables
+constant.
 
-Would you be comfortable generalizing your conclusions to apply to
-professors generally (at any university)? Why or why not?
+Categorical predictor (ETHNICITY): Professors who are not a minority
+score 0.20 points higher than minority professors, holding all other
+variables constant.
+
+### Exercise 21
+
+Based on the model, the highest predicted evaluation score would come
+from a professor who is male, not a minority, teaches in English, is
+younger, more attractive, and teaches a one credit course with a high
+percentage of students completing evaluations.
+
+### Exercise 22
 
 I would be hesitant to generalize my conclusions to professors at any
 university, as students and professors are nested in the university, so
 I would want to run an MLM to test this across multiple universities,
 and then we may be able to generalize more confidently to the general
-university population.
+university population. Even within the school, the sample may not be
+representative of all departments or course types, which adds another
+layer of caution before generalizing anywhere.
